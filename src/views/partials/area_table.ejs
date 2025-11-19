@@ -1,0 +1,46 @@
+<table class="grid">
+  <thead>
+    <tr>
+      <th class="col-unidad">Unidad</th>
+      <th class="col-tipo">Tipo</th>
+      <% days.forEach(function(d){ %>
+        <th><%= d.label %></th>
+      <% }) %>
+      <th class="col-total">TOTAL</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% let gi = 0; %>
+    <% (units[area.id] || []).forEach(function(u){ %>
+      <% if (u.id === 4000) { return; } %>
+      <% const evenOdd = (gi++ % 2 === 0) ? 'even' : 'odd'; %>
+      <tr class="group <%= evenOdd %>">
+        <td class="unit col-unidad strong" rowspan="2"><%= u.name %></td>
+        <td class="col-tipo">BOLETAS MANUALES</td>
+        <% var rowSumM = 0; %>
+        <% days.forEach(function(d){ const key = `${u.id}|${d.iso}`; const c = counts[key] || { manual: 0, electronic: 0 }; rowSumM += (c.manual||0); %>
+          <td class="num"><%= c.manual %></td>
+        <% }) %>
+        <td class="num col-total"><%= rowSumM %></td>
+      </tr>
+      <tr class="group <%= evenOdd %>">
+        <td class="col-tipo">BOLETAS ELECTRÓNICAS</td>
+        <% var rowSumE = 0; %>
+        <% days.forEach(function(d){ const key = `${u.id}|${d.iso}`; const c = counts[key] || { manual: 0, electronic: 0 }; rowSumE += (c.electronic||0); %>
+          <td class="num"><%= c.electronic %></td>
+        <% }) %>
+        <td class="num col-total"><%= rowSumE %></td>
+      </tr>
+    <% }) %>
+  </tbody>
+  <tfoot>
+    <tr>
+      <td class="strong" colspan="2">TOTAL</td>
+      <% var grandTotal = 0; %>
+      <% days.forEach(function(d){ var sum = 0; (units[area.id]||[]).forEach(function(u){ if (u.id === 4000) return; var key = `${u.id}|${d.iso}`; var c = counts[key] || { manual: 0, electronic: 0 }; sum += (c.manual||0) + (c.electronic||0); }); grandTotal += sum; %>
+        <td class="num"><%= sum %></td>
+      <% }) %>
+      <td class="num col-total strong"><%= grandTotal %></td>
+    </tr>
+  </tfoot>
+</table>

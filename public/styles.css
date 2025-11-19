@@ -1,0 +1,61 @@
+:root{--bg:#0e0f10;--card:#1b1d20;--text:#e9eef3;--muted:#9aa4af;--accent:#2d7ef7;--grid:#2a2d31;--alt:#3a3e44;--ok:#2ecc71;--unidad-w:260px;--tipo-w:180px}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,Segoe UI,Arial}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;background:var(--card);border-bottom:1px solid #222}
+.topbar a{color:var(--text);text-decoration:none}
+.container{max-width:none;width:100%;margin:0;padding:0 16px}
+.narrow{max-width:420px}
+.row{display:flex;gap:10px;align-items:center;margin-bottom:16px}
+.card{background:var(--card);padding:16px;border-radius:8px;border:1px solid #222}
+label{font-size:14px;color:var(--muted)}
+input,select,button{padding:8px 10px;border-radius:6px;border:1px solid #333;background:#121314;color:var(--text)}
+button,.button{background:var(--accent);border:0;color:#fff;cursor:pointer}
+.error{background:#7a1b1b;padding:10px;border-radius:6px;margin-bottom:12px}
+.grid{width:max-content;min-width:100%;border-collapse:collapse}
+.grid th,.grid td{border:1px solid var(--grid);padding:6px;text-align:center}
+.grid thead th{background:#202329;position:sticky;top:0;z-index:12}
+.unit{background:transparent;text-align:left}
+.unit.alt{background:transparent}
+.num{width:70px}
+.num input{width:100%;background:#0f1113;border:1px solid #333;text-align:center}
+.strong{font-weight:700}
+.tabs{position:relative}
+.tabs input[type=radio]{display:none}
+.tabs .tabbar{position:sticky;top:0;background:var(--card);padding:8px;border-bottom:1px solid #333;z-index:10}
+.tabs .tabbar label{display:inline-block;padding:10px 12px;margin-right:4px;background:#222;border:1px solid #333;border-radius:6px;cursor:pointer}
+.tabs .panels{border:0;padding:0;background:transparent;margin-top:8px}
+.tablebox{border:1px solid #333;border-radius:8px;background:var(--card);padding:10px;overflow:auto;height:calc(100vh - 160px)}
+.panels .panel{display:none}
+#tab-1:checked~.tabbar label[for=tab-1],
+#tab-2:checked~.tabbar label[for=tab-2],
+#tab-3:checked~.tabbar label[for=tab-3],
+#tab-4:checked~.tabbar label[for=tab-4],
+#tab-5:checked~.tabbar label[for=tab-5]{background:var(--accent)}
+#tab-1:checked~.panels .panel-1,
+#tab-2:checked~.panels .panel-2,
+#tab-3:checked~.panels .panel-3,
+#tab-4:checked~.panels .panel-4,
+#tab-5:checked~.panels .panel-5{display:block}
+.actions{margin-top:12px}
+
+/* Sticky first columns */
+.grid th.col-unidad,.grid td.col-unidad{position:sticky;left:0;width:var(--unidad-w);min-width:var(--unidad-w);background:var(--card)}
+.grid td.col-unidad{z-index:9}
+.grid th.col-unidad{z-index:15}
+.grid th.col-tipo,.grid td.col-tipo{position:sticky;left:var(--unidad-w);width:var(--tipo-w);min-width:var(--tipo-w);background:var(--card)}
+.grid td.col-tipo{z-index:8}
+.grid th.col-tipo{z-index:14}
+
+/* Alternate shading per unit group (two rows per group) */
+.group.even td{background:#1c1f24}
+.group.odd td{background:#202329}
+
+/* Sticky last column (TOTAL) */
+.grid th.col-total,.grid td.col-total{position:sticky;right:0;background:var(--card);min-width:100px}
+.grid td.col-total{z-index:7}
+.grid th.col-total{z-index:13}
+
+/* Prevent text overlap */
+.grid th,.grid td{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.grid .unit{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.grid .col-tipo{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

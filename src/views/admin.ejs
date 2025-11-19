@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administración</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>Administración</div>
+    <nav>
+      <a href="/admin/locks?month=<%= ym %>">Bloqueos</a>
+      <a href="/admin/users">Usuarios</a>
+      <a href="/logout">Salir</a>
+    </nav>
+  </header>
+  <div class="container">
+    <section class="card">
+      <div class="row">
+        <label>Mes (YYYY-MM)</label>
+        <form method="get" action="/admin" class="row">
+          <input type="month" name="month" value="<%= ym %>" id="monthPickerAdmin">
+          <button type="button" class="button" onclick="(function(){var i=document.getElementById('monthPickerAdmin'); if(i && i.showPicker){i.showPicker()} else { i.focus(); i.click(); }})()">📅</button>
+          <button type="submit">Ver</button>
+        </form>
+        <form method="get" action="/admin/export" class="row">
+          <input type="hidden" name="month" value="<%= ym %>">
+          <button type="submit">Descargar Excel</button>
+        </form>
+      </div>
+    </section>
+
+    
+
+    <section class="tabs">
+      <input type="radio" id="tab-1" name="tabs" checked>
+      <input type="radio" id="tab-2" name="tabs">
+      <input type="radio" id="tab-3" name="tabs">
+      <input type="radio" id="tab-4" name="tabs">
+      <input type="radio" id="tab-5" name="tabs">
+      <div class="tabbar">
+        <label for="tab-1"><%= areas[0].name %></label>
+        <label for="tab-2"><%= areas[1].name %></label>
+        <label for="tab-3"><%= areas[2].name %></label>
+        <label for="tab-4"><%= areas[3].name %></label>
+        <label for="tab-5"><%= areas[4].name %></label>
+      </div>
+      <div class="panels">
+        <div class="panel panel-1">
+          <div class="tablebox">
+            <%- include('partials/area_table', { area: areas[0], units, days, counts }) %>
+          </div>
+        </div>
+        <div class="panel panel-2">
+          <div class="tablebox">
+            <%- include('partials/area_table', { area: areas[1], units, days, counts }) %>
+          </div>
+        </div>
+        <div class="panel panel-3">
+          <div class="tablebox">
+            <%- include('partials/area_table', { area: areas[2], units, days, counts }) %>
+          </div>
+        </div>
+        <div class="panel panel-4">
+          <div class="tablebox">
+            <%- include('partials/area_table', { area: areas[3], units, days, counts }) %>
+          </div>
+        </div>
+        <div class="panel panel-5">
+          <div class="tablebox">
+            <%- include('partials/area_table', { area: areas[4], units, days, counts }) %>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

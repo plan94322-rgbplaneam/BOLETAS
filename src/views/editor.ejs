@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editor</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div><%= unit.name %></div>
+    <nav>
+      <a href="/logout">Salir</a>
+    </nav>
+  </header>
+  <div class="container">
+    <section class="card">
+      <h2>Registro mensual <%= ym %></h2>
+      <% if (unit.id === 4000) { %>
+        <form method="post" action="/editor/save">
+          <input type="hidden" name="month" value="<%= ym %>">
+          <table class="grid">
+            <thead>
+              <tr>
+                <th class="col-unidad">Unidad</th>
+                <th class="col-tipo">Tipo</th>
+                <% days.forEach(function(d){ %>
+                  <th><%= d.label %></th>
+                <% }) %>
+                <th class="col-total">TOTAL</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% let gi = 0; %>
+              <% (units[areaId] || []).forEach(function(u){ %>
+                <% if (u.id === 4000) { return; } %>
+                <% const evenOdd = (gi++ % 2 === 0) ? 'even' : 'odd'; %>
+                <tr class="group <%= evenOdd %>">
+                  <td class="unit col-unidad strong" rowspan="2"><%= u.name %></td>
+                  <td class="col-tipo">BOLETAS MANUALES</td>
+                  <% var rowSumM = 0; %>
+                  <% days.forEach(function(d){ const key = `${u.id}|${d.iso}`; const c = counts[key] || { manual: 0, electronic: 0 }; %>
+                    <td>
+                      <input type="number" min="0" name="manual[<%= u.id %>][<%= d.iso %>]" value="<%= c.manual %>" <%= (locks && locks[d.iso]) ? 'disabled' : '' %> >
+                      <% rowSumM += (c.manual||0); %>
+                    </td>
+                  <% }) %>
+                  <td class="num col-total"><%= rowSumM %></td>
+                </tr>
+                <tr class="group <%= evenOdd %>">
+                  <td class="col-tipo">BOLETAS ELECTRÓNICAS</td>
+                  <% var rowSumE = 0; %>
+                  <% days.forEach(function(d){ const key = `${u.id}|${d.iso}`; const c = counts[key] || { manual: 0, electronic: 0 }; %>
+                    <td>
+                      <input type="number" min="0" name="electronic[<%= u.id %>][<%= d.iso %>]" value="<%= c.electronic %>" <%= (locks && locks[d.iso]) ? 'disabled' : '' %> >
+                      <% rowSumE += (c.electronic||0); %>
+                    </td>
+                  <% }) %>
+                  <td class="num col-total"><%= rowSumE %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td class="strong" colspan="2">TOTAL</td>
+                <% days.forEach(function(d){ var sum = 0; (units[areaId]||[]).forEach(function(u){ if (u.id === 4000) return; var key = `${u.id}|${d.iso}`; var c = counts[key] || { manual: 0, electronic: 0 }; sum += (c.manual||0) + (c.electronic||0); }); %>
+                  <td class="num"><%= sum %></td>
+                <% }) %>
+                <% var grandTotal = 0; days.forEach(function(d){ var sum = 0; (units[areaId]||[]).forEach(function(u){ if (u.id === 4000) return; var key = `${u.id}|${d.iso}`; var c = counts[key] || { manual: 0, electronic: 0 }; sum += (c.manual||0) + (c.electronic||0); }); grandTotal += sum; }); %>
+                <td class="num col-total strong"><%= grandTotal %></td>
+              </tr>
+            </tfoot>
+          </table>
+          <div class="actions">
+            <button type="submit">Guardar</button>
+          </div>
+        </form>
+      <% } else { %>
+        <form method="post" action="/editor/save">
+          <input type="hidden" name="month" value="<%= ym %>">
+          <table class="grid">
+            <thead>
+              <tr>
+                <th>Unidad</th>
+                <th>Tipo</th>
+                <% days.forEach(function(d){ %>
+                  <th><%= d.label %></th>
+                <% }) %>
+                <th class="col-total">TOTAL</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="unit strong" rowspan="2"><%= unit.name %></td>
+                <td>BOLETAS MANUALES</td>
+                <% var rowSumM = 0; %>
+                <% days.forEach(function(d){ %>
+                  <td>
+                    <input type="number" min="0" name="manual[<%= d.iso %>]" value="<%= (counts[d.iso] && counts[d.iso].manual) || 0 %>" <%= (locks && locks[d.iso]) ? 'disabled' : '' %> >
+                    <% rowSumM += ((counts[d.iso] && counts[d.iso].manual) || 0); %>
+                  </td>
+                <% }) %>
+                <td class="num col-total"><%= rowSumM %></td>
+              </tr>
+              <tr>
+                <td>BOLETAS ELECTRÓNICAS</td>
+                <% var rowSumE = 0; %>
+                <% days.forEach(function(d){ %>
+                  <td>
+                    <input type="number" min="0" name="electronic[<%= d.iso %>]" value="<%= (counts[d.iso] && counts[d.iso].electronic) || 0 %>" <%= (locks && locks[d.iso]) ? 'disabled' : '' %> >
+                    <% rowSumE += ((counts[d.iso] && counts[d.iso].electronic) || 0); %>
+                  </td>
+                <% }) %>
+                <td class="num col-total"><%= rowSumE %></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="actions">
+            <button type="submit">Guardar</button>
+          </div>
+        </form>
+      <% } %>
+    </section>
+  </div>
+</body>
+</html>

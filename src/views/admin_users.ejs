@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Usuarios</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>Administración de usuarios</div>
+    <nav>
+      <a href="/admin">Volver a tablas</a>
+      <a href="/admin/locks?month=<%= (new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0')) %>">Bloqueos</a>
+      <a href="/logout">Salir</a>
+    </nav>
+  </header>
+  <div class="container">
+    <section class="card">
+      <h2>Crear usuario editor</h2>
+      <% if (typeof error !== 'undefined' && error) { %>
+        <div class="error"><%= error %></div>
+      <% } %>
+      <form method="post" action="/admin/users" class="row">
+        <label>Usuario</label>
+        <input type="text" name="username" required>
+        <label>Contraseña</label>
+        <input type="password" name="password" required>
+        <label>Unidad</label>
+        <select name="unit_id" required>
+          <% areas.forEach(function(area){ %>
+            <optgroup label="<%= area.name %>">
+              <% if (area.id === 4) { %>
+                <option value="4000">POLICIA RURAL</option>
+              <% } else { %>
+                <% units[area.id].forEach(function(u){ %>
+                  <option value="<%= u.id %>"><%= u.name %></option>
+                <% }) %>
+              <% } %>
+            </optgroup>
+          <% }) %>
+        </select>
+        <button type="submit">Crear</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Usuarios actuales</h2>
+      <table class="grid">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Usuario</th>
+            <th>Rol</th>
+            <th>Unidad</th>
+            <th>Nueva contraseña</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% users.forEach(function(us){ %>
+            <tr>
+              <td class="num"><%= us.id %></td>
+              <td><%= us.username %></td>
+              <td><%= us.role %></td>
+              <td><%= us.unit_name %></td>
+              <td>
+                <form method="post" action="/admin/users/update" class="row">
+                  <input type="hidden" name="id" value="<%= us.id %>">
+                  <input type="password" name="password" placeholder="Contraseña" required>
+                  <button type="submit" class="button">Editar</button>
+                </form>
+              </td>
+              <td>
+                <% if (us.role !== 'admin') { %>
+                  <form method="post" action="/admin/users/delete/<%= us.id %>" onsubmit="return confirm('¿Eliminar esta cuenta?')">
+                  <button type="submit" class="button">🗑️ Eliminar</button>
+                  </form>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </section>
+  </div>
+</body>
+</html>

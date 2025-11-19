@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bloqueo de fechas</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>Bloqueo de fechas</div>
+    <nav>
+      <a href="/admin">Tablas</a>
+      <a href="/admin/users">Usuarios</a>
+      <a href="/logout">Salir</a>
+    </nav>
+  </header>
+  <div class="container">
+    <section class="card">
+      <div class="row">
+        <label>Mes (YYYY-MM)</label>
+        <form method="get" action="/admin/locks" class="row">
+          <input type="month" name="month" value="<%= ym %>" id="monthPickerLocks">
+          <button type="button" class="button" onclick="(function(){var i=document.getElementById('monthPickerLocks'); if(i && i.showPicker){i.showPicker()} else { i.focus(); i.click(); }})()">📅</button>
+          <button type="submit">Ver</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Fechas del mes</h2>
+      <table class="grid">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Estado</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% days.forEach(function(d){ %>
+            <tr>
+              <td><%= d.label %></td>
+              <td><%= (lockedDates && lockedDates[d.iso]) ? 'Bloqueado' : 'Desbloqueado' %></td>
+              <td>
+                <% if (lockedDates && lockedDates[d.iso]) { %>
+                  <form method="post" action="/admin/unlock/<%= d.iso %>">
+                    <button type="submit" class="button">Desbloquear</button>
+                  </form>
+                <% } else { %>
+                  <form method="post" action="/admin/lock/<%= d.iso %>">
+                    <button type="submit" class="button">Bloquear</button>
+                  </form>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </section>
+  </div>
+</body>
+</html>
