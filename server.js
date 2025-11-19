@@ -11,9 +11,10 @@ app.set('view engine', 'ejs')
 app.set('views', path.join(__dirname, 'src', 'views'))
 app.use(express.urlencoded({ extended: true }))
 app.use(express.static(path.join(__dirname, 'public')))
+const SESSION_SECRET = process.env.SESSION_SECRET || 'boletas-secret'
 app.use(
   session({
-    secret: 'boletas-secret',
+    secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
   })
