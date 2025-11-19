@@ -13,11 +13,16 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 app.use(express.json({ limit: '10mb' }))
 app.use(express.static(path.join(__dirname, 'public')))
 const SESSION_SECRET = process.env.SESSION_SECRET || 'boletas-secret'
+app.set('trust proxy', 1)
 app.use(
   session({
     secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
+    cookie: {
+      maxAge: 1000 * 60 * 60 * 8,
+      sameSite: 'lax',
+    },
   })
 )
 

@@ -77,11 +77,13 @@ function getCountsForUnitMonth(unitId, ym) {
 }
 
 function upsertCount(unitId, date, manual, electronic) {
-  const existing = db.prepare('SELECT id FROM counts WHERE unit_id = ? AND date = ?').get(unitId, date)
-  if (existing) {
-    db.prepare('UPDATE counts SET manual = ?, electronic = ? WHERE id = ?').run(manual, electronic, existing.id)
+  const row = db.prepare('SELECT id, IFNULL(manual,0) AS manual, IFNULL(electronic,0) AS electronic FROM counts WHERE unit_id = ? AND date = ?').get(unitId, date)
+  const m = typeof manual === 'number' ? manual : (row ? row.manual : 0)
+  const e = typeof electronic === 'number' ? electronic : (row ? row.electronic : 0)
+  if (row) {
+    db.prepare('UPDATE counts SET manual = ?, electronic = ? WHERE id = ?').run(m, e, row.id)
   } else {
-    db.prepare('INSERT INTO counts (unit_id, date, manual, electronic) VALUES (?, ?, ?, ?)').run(unitId, date, manual, electronic)
+    db.prepare('INSERT INTO counts (unit_id, date, manual, electronic) VALUES (?, ?, ?, ?)').run(unitId, date, m, e)
   }
 }
 
