@@ -89,8 +89,8 @@
           <table class="grid">
             <thead>
               <tr>
-                <th>Unidad</th>
-                <th>Tipo</th>
+                <th class="col-unidad">Unidad</th>
+                <th class="col-tipo">Tipo</th>
                 <% days.forEach(function(d){ %>
                   <th><%= d.label %></th>
                 <% }) %>
@@ -99,8 +99,8 @@
             </thead>
             <tbody>
               <tr>
-                <td class="unit strong" rowspan="2"><%= unit.name %></td>
-                <td>BOLETAS MANUALES</td>
+                <td class="unit col-unidad strong" rowspan="2"><%= unit.name %></td>
+                <td class="col-tipo">BOLETAS MANUALES</td>
                 <% var rowSumM = 0; %>
                 <% days.forEach(function(d){ %>
                   <td>
@@ -111,7 +111,7 @@
                 <td class="num col-total"><%= rowSumM %></td>
               </tr>
               <tr>
-                <td>BOLETAS ELECTRÓNICAS</td>
+                <td class="col-tipo">BOLETAS ELECTRÓNICAS</td>
                 <% var rowSumE = 0; %>
                 <% days.forEach(function(d){ %>
                   <td>
