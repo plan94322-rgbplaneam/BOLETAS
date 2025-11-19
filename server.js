@@ -279,6 +279,20 @@ app.post('/admin/unlock-month/:ym', requireAdmin, (req, res) => {
   res.redirect(`/admin/locks?month=${ym}`)
 })
 
+app.post('/admin/reset', requireAdmin, (req, res) => {
+  db.resetApp()
+  req.session.destroy(() => {
+    res.redirect('/login')
+  })
+})
+
+app.post('/admin/reset/', requireAdmin, (req, res) => {
+  db.resetApp()
+  req.session.destroy(() => {
+    res.redirect('/login')
+  })
+})
+
 const PORT = process.env.PORT || 3000
 db.init()
 db.seedAreasUnits(areas, unitsByArea)

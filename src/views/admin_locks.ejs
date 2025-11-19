@@ -40,6 +40,13 @@
     </section>
 
     <section class="card">
+      <h2>Mantenimiento</h2>
+      <form method="post" action="/admin/reset" onsubmit="return confirm('¿Reiniciar la app a estado inicial? Se borrarán usuarios editores, conteos y bloqueos.')">
+        <button type="submit" class="button">Reiniciar app</button>
+      </form>
+    </section>
+
+    <section class="card">
       <h2>Fechas del mes</h2>
       <table class="grid">
         <thead>
