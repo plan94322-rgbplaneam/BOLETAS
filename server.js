@@ -210,46 +210,39 @@ app.post('/editor/save', requireEditor, (req, res) => {
   const lockedArr = db.getLockedDatesForMonth(ym)
   const lockSet = {}
   lockedArr.forEach((d) => (lockSet[d] = true))
+
   if (unitId === 4000) {
-    const grouped = {}
-    Object.keys(req.body).forEach((k) => {
-      const m = k.match(/(manual|electronic)\[(\d+)\]\[(\d{4}-\d{2}-\d{2})\]/)
-      if (m) {
-        const type = m[1]
-        const uId = parseInt(m[2], 10)
-        const date = m[3]
-        if (lockSet[date]) return
-        const value = parseInt(req.body[k] || '0', 10) || 0
-        const key = `${uId}|${date}`
-        if (!grouped[key]) grouped[key] = { manual: 0, electronic: 0 }
-        if (type === 'manual') grouped[key].manual = value
-        else grouped[key].electronic = value
-      }
-    })
-    Object.keys(grouped).forEach((key) => {
-      const [uidStr, date] = key.split('|')
-      const uId = parseInt(uidStr, 10)
-      db.upsertCount(uId, date, grouped[key].manual, grouped[key].electronic)
+    const countsMap = db.getCountsForMonth(ym)
+    const manualObj = req.body.manual || {}
+    const electronicObj = req.body.electronic || {}
+    const areaUnits = unitsByArea[4] || []
+    const days = daysOfMonth(ym)
+    areaUnits.forEach((u) => {
+      if (u.id === 4000) return
+      days.forEach((d) => {
+        if (lockSet[d.iso]) return
+        const key = `${u.id}|${d.iso}`
+        const prev = countsMap[key] || { manual: 0, electronic: 0 }
+        const mValRaw = manualObj[u.id] && manualObj[u.id][d.iso]
+        const eValRaw = electronicObj[u.id] && electronicObj[u.id][d.iso]
+        const mVal = (mValRaw !== undefined && mValRaw !== '') ? parseInt(mValRaw, 10) || 0 : prev.manual
+        const eVal = (eValRaw !== undefined && eValRaw !== '') ? parseInt(eValRaw, 10) || 0 : prev.electronic
+        db.upsertCount(u.id, d.iso, mVal, eVal)
+      })
     })
   } else {
-    const entries = []
-    Object.keys(req.body).forEach((k) => {
-      const m = k.match(/(manual|electronic)\[(\d{4}-\d{2}-\d{2})\]/)
-      if (m) {
-        const type = m[1]
-        const date = m[2]
-        const value = parseInt(req.body[k] || '0', 10) || 0
-        if (!lockSet[date]) entries.push({ date, manual: type === 'manual' ? value : undefined, electronic: type === 'electronic' ? value : undefined })
-      }
-    })
-    const merged = {}
-    entries.forEach((e) => {
-      if (!merged[e.date]) merged[e.date] = { manual: 0, electronic: 0 }
-      if (typeof e.manual === 'number') merged[e.date].manual = e.manual
-      if (typeof e.electronic === 'number') merged[e.date].electronic = e.electronic
-    })
-    Object.keys(merged).forEach((date) => {
-      db.upsertCount(unitId, date, merged[date].manual, merged[date].electronic)
+    const countsMap = db.getCountsForUnitMonth(unitId, ym)
+    const manualObj = req.body.manual || {}
+    const electronicObj = req.body.electronic || {}
+    const days = daysOfMonth(ym)
+    days.forEach((d) => {
+      if (lockSet[d.iso]) return
+      const prev = countsMap[d.iso] || { manual: 0, electronic: 0 }
+      const mValRaw = manualObj[d.iso]
+      const eValRaw = electronicObj[d.iso]
+      const mVal = (mValRaw !== undefined && mValRaw !== '') ? parseInt(mValRaw, 10) || 0 : prev.manual
+      const eVal = (eValRaw !== undefined && eValRaw !== '') ? parseInt(eValRaw, 10) || 0 : prev.electronic
+      db.upsertCount(unitId, d.iso, mVal, eVal)
     })
   }
   res.redirect(`/editor?month=${ym}`)
