@@ -105,6 +105,12 @@ function getLockedDatesForMonth(ym) {
   return rows.map((r) => r.date)
 }
 
+function resetApp() {
+  db.prepare('DELETE FROM counts').run()
+  db.prepare('DELETE FROM locks').run()
+  db.prepare('DELETE FROM users WHERE role != "admin"').run()
+}
+
 module.exports = {
   init,
   seedAreasUnits,
@@ -123,4 +129,5 @@ module.exports = {
   unlockDate,
   isDateLocked,
   getLockedDatesForMonth,
+  resetApp,
 }
