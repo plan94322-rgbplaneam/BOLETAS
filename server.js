@@ -9,7 +9,8 @@ const { areas, unitsByArea } = require('./src/units')
 const app = express()
 app.set('view engine', 'ejs')
 app.set('views', path.join(__dirname, 'src', 'views'))
-app.use(express.urlencoded({ extended: true }))
+app.use(express.urlencoded({ extended: true, limit: '10mb' }))
+app.use(express.json({ limit: '10mb' }))
 app.use(express.static(path.join(__dirname, 'public')))
 const SESSION_SECRET = process.env.SESSION_SECRET || 'boletas-secret'
 app.use(
@@ -249,12 +250,6 @@ app.post('/editor/save', requireEditor, (req, res) => {
   res.redirect(`/editor?month=${ym}`)
 })
 
-const PORT = process.env.PORT || 3000
-db.init()
-db.seedAreasUnits(areas, unitsByArea)
-app.listen(PORT, () => {
-  console.log(`Servidor en http://localhost:${PORT}/login`)
-})
 app.post('/admin/lock/:date', requireAdmin, (req, res) => {
   const date = req.params.date
   db.lockDate(date)
@@ -267,4 +262,25 @@ app.post('/admin/unlock/:date', requireAdmin, (req, res) => {
   db.unlockDate(date)
   const ym = date.substring(0, 7)
   res.redirect(`/admin/locks?month=${ym}`)
+})
+
+app.post('/admin/lock-month/:ym', requireAdmin, (req, res) => {
+  const ym = req.params.ym
+  const days = daysOfMonth(ym)
+  days.forEach((d) => db.lockDate(d.iso))
+  res.redirect(`/admin/locks?month=${ym}`)
+})
+
+app.post('/admin/unlock-month/:ym', requireAdmin, (req, res) => {
+  const ym = req.params.ym
+  const days = daysOfMonth(ym)
+  days.forEach((d) => db.unlockDate(d.iso))
+  res.redirect(`/admin/locks?month=${ym}`)
+})
+
+const PORT = process.env.PORT || 3000
+db.init()
+db.seedAreasUnits(areas, unitsByArea)
+app.listen(PORT, () => {
+  console.log(`Servidor en http://localhost:${PORT}/login`)
 })

@@ -28,6 +28,18 @@
     </section>
 
     <section class="card">
+      <h2>Acciones del mes</h2>
+      <div class="row">
+        <form method="post" action="/admin/lock-month/<%= ym %>" class="row">
+          <button type="submit" class="button">Bloquear mes completo</button>
+        </form>
+        <form method="post" action="/admin/unlock-month/<%= ym %>" class="row">
+          <button type="submit" class="button">Desbloquear mes completo</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="card">
       <h2>Fechas del mes</h2>
       <table class="grid">
         <thead>
