@@ -68,3 +68,19 @@ button,.button{background:var(--accent);border:0;color:#fff;cursor:pointer}
 .grid th,.grid td{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .grid .unit{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .grid .col-tipo{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Mobile responsive */
+@media (max-width: 768px){
+  :root{--unidad-w:180px;--tipo-w:140px}
+  .container{padding:0 8px}
+  .topbar{padding:10px 12px}
+  .tabs .tabbar{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tabs .tabbar label{flex:0 0 auto;margin-right:8px}
+  .tablebox{height:calc(100vh - 120px)}
+  .grid th,.grid td{padding:8px 6px}
+  .num{width:60px}
+  .num input{min-height:36px;font-size:16px}
+  .grid th.col-total,.grid td.col-total{min-width:80px}
+  .auth{padding:16px}
+  .auth-card{max-width:340px}
+}
