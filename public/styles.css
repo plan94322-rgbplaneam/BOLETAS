@@ -38,6 +38,15 @@ button,.button{background:var(--accent);border:0;color:#fff;cursor:pointer}
 #tab-5:checked~.panels .panel-5{display:block}
 .actions{margin-top:12px}
 
+/* Auth */
+.auth{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.auth-card{width:100%;max-width:420px;background:var(--card);padding:24px;border-radius:12px;border:1px solid #333;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.brand{font-size:28px;font-weight:800;margin-bottom:4px}
+.subtitle{font-size:14px;color:var(--muted);margin-bottom:16px}
+.form{display:flex;flex-direction:column;gap:12px}
+.input-group{display:flex;flex-direction:column;gap:6px}
+.button.full{width:100%}
+
 /* Sticky first columns */
 .grid th.col-unidad,.grid td.col-unidad{position:sticky;left:0;width:var(--unidad-w);min-width:var(--unidad-w);background:var(--card)}
 .grid td.col-unidad{z-index:9}

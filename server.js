@@ -19,9 +19,12 @@ app.use(
     secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
+    rolling: true,
+    name: 'sid',
     cookie: {
       maxAge: 1000 * 60 * 60 * 8,
       sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
     },
   })
 )

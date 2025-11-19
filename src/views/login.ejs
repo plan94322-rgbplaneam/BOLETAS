@@ -7,21 +7,23 @@
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <header class="topbar">
-    <div>Acceso</div>
-  </header>
-  <div class="container narrow">
-    <section class="card">
-      <h2>Ingreso</h2>
+  <div class="auth">
+    <section class="auth-card">
+      <div class="brand">Boletas</div>
+      <div class="subtitle">Acceso</div>
       <% if (error) { %>
         <div class="error"><%= error %></div>
       <% } %>
-      <form method="post" action="/login" class="row">
-        <label>Usuario</label>
-        <input type="text" name="username" required>
-        <label>Contraseña</label>
-        <input type="password" name="password" required>
-        <button type="submit">Entrar</button>
+      <form method="post" action="/login" class="form">
+        <div class="input-group">
+          <label>Usuario</label>
+          <input type="text" name="username" placeholder="Ingresa tu usuario" required>
+        </div>
+        <div class="input-group">
+          <label>Contraseña</label>
+          <input type="password" name="password" placeholder="Ingresa tu contraseña" required>
+        </div>
+        <button type="submit" class="button full">Entrar</button>
       </form>
     </section>
   </div>
