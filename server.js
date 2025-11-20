@@ -164,22 +164,52 @@ app.get('/admin/export', requireAdmin, (req, res) => {
   const wb = xlsx.utils.book_new()
   areas.forEach((area) => {
     const sheetRows = []
-    const header = ['UNIDAD']
-    days.forEach((d) => {
-      header.push(`${d.label} MANUALES`)
-      header.push(`${d.label} ELECTRÓNICAS`)
-    })
+    const header = ['UNIDAD', 'TIPO']
+    days.forEach((d) => header.push(d.label))
+    header.push('TOTAL')
     sheetRows.push(header)
-    unitsByArea[area.id].forEach((u) => {
-      const row = [u.name]
+    const units = (unitsByArea[area.id] || []).filter((u) => u.id !== 4000)
+    units.forEach((u) => {
+      const manualRow = [u.name, 'BOLETAS MANUALES']
+      let manualTotal = 0
       days.forEach((d) => {
         const key = `${u.id}|${d.iso}`
         const c = counts[key] || { manual: 0, electronic: 0 }
-        row.push(c.manual || 0)
-        row.push(c.electronic || 0)
+        const v = c.manual || 0
+        manualRow.push(v)
+        manualTotal += v
       })
-      sheetRows.push(row)
+      manualRow.push(manualTotal)
+      sheetRows.push(manualRow)
+
+      const electronicRow = [u.name, 'BOLETAS ELECTRÓNICAS']
+      let electronicTotal = 0
+      days.forEach((d) => {
+        const key = `${u.id}|${d.iso}`
+        const c = counts[key] || { manual: 0, electronic: 0 }
+        const v = c.electronic || 0
+        electronicRow.push(v)
+        electronicTotal += v
+      })
+      electronicRow.push(electronicTotal)
+      sheetRows.push(electronicRow)
     })
+
+    const totalsRow = ['TOTAL', '']
+    let grandTotal = 0
+    days.forEach((d) => {
+      let sum = 0
+      units.forEach((u) => {
+        const key = `${u.id}|${d.iso}`
+        const c = counts[key] || { manual: 0, electronic: 0 }
+        sum += (c.manual || 0) + (c.electronic || 0)
+      })
+      totalsRow.push(sum)
+      grandTotal += sum
+    })
+    totalsRow.push(grandTotal)
+    sheetRows.push(totalsRow)
+
     const ws = xlsx.utils.aoa_to_sheet(sheetRows)
     xlsx.utils.book_append_sheet(wb, ws, area.name.substring(0, 31))
   })
