@@ -1,3 +1,4 @@
+require('dotenv').config()
 const express = require('express')
 const path = require('path')
 const session = require('express-session')
@@ -65,9 +66,9 @@ app.get('/login', (req, res) => {
   res.render('login', { error: null })
 })
 
-app.post('/login', (req, res) => {
+app.post('/login', async (req, res) => {
   const { username, password } = req.body
-  const user = db.getUserByUsername(username)
+  const user = await db.getUserByUsername(username)
   if (!user) return res.render('login', { error: 'Usuario o contraseña inválidos' })
   const ok = bcrypt.compareSync(password, user.password_hash)
   if (!ok) return res.render('login', { error: 'Usuario o contraseña inválidos' })
@@ -88,79 +89,79 @@ app.get('/', (req, res) => {
   return res.redirect('/editor')
 })
 
-app.get('/admin', requireAdmin, (req, res) => {
+app.get('/admin', requireAdmin, async (req, res) => {
   const ym = ymFromQuery(req.query.month)
   const days = daysOfMonth(ym)
   const units = unitsByArea
-  const counts = db.getCountsForMonth(ym)
-  const lockedArr = db.getLockedDatesForMonth(ym)
+  const counts = await db.getCountsForMonth(ym)
+  const lockedArr = await db.getLockedDatesForMonth(ym)
   const lockedDates = {}
   lockedArr.forEach((d) => (lockedDates[d] = true))
   res.render('admin', { areas, units, days, counts, ym, lockedDates })
 })
 
-app.get('/admin/locks', requireAdmin, (req, res) => {
+app.get('/admin/locks', requireAdmin, async (req, res) => {
   const ym = ymFromQuery(req.query.month)
   const days = daysOfMonth(ym)
-  const lockedArr = db.getLockedDatesForMonth(ym)
+  const lockedArr = await db.getLockedDatesForMonth(ym)
   const lockedDates = {}
   lockedArr.forEach((d) => (lockedDates[d] = true))
   res.render('admin_locks', { days, ym, lockedDates })
 })
 
-app.get('/admin/locks/', requireAdmin, (req, res) => {
+app.get('/admin/locks/', requireAdmin, async (req, res) => {
   const ym = ymFromQuery(req.query.month)
   const days = daysOfMonth(ym)
-  const lockedArr = db.getLockedDatesForMonth(ym)
+  const lockedArr = await db.getLockedDatesForMonth(ym)
   const lockedDates = {}
   lockedArr.forEach((d) => (lockedDates[d] = true))
   res.render('admin_locks', { days, ym, lockedDates })
 })
 
-app.post('/admin/users', requireAdmin, (req, res) => {
+app.post('/admin/users', requireAdmin, async (req, res) => {
   const { username, password, unit_id } = req.body
   if (!username || !password || !unit_id) return res.redirect('/admin/users?error=Datos incompletos')
-  const exists = db.getUserByUsername(username)
+  const exists = await db.getUserByUsername(username)
   if (exists) return res.redirect('/admin/users?error=El usuario ya existe')
   const hash = bcrypt.hashSync(password, 10)
   const unitIdNum = parseInt(unit_id, 10)
   const ruralUnitId = 4000
   if (unitIdNum === ruralUnitId) {
-    const has = db.countUsersByUnit(unitIdNum)
+    const has = await db.countUsersByUnit(unitIdNum)
     if (has > 0) return res.redirect('/admin/users?error=Ya existe un editor para Policía Rural')
   }
-  db.createEditor(username, hash, unitIdNum)
+  await db.createEditor(username, hash, unitIdNum)
   res.redirect('/admin/users')
 })
 
-app.get('/admin/users', requireAdmin, (req, res) => {
+app.get('/admin/users', requireAdmin, async (req, res) => {
   const units = unitsByArea
-  const users = db.getAllUsers()
+  const users = await db.getAllUsers()
   res.render('admin_users', { areas, units, users, error: req.query.error || null })
 })
 
-app.post('/admin/users/update', requireAdmin, (req, res) => {
+app.post('/admin/users/update', requireAdmin, async (req, res) => {
   const { id, password } = req.body
   if (!id || !password) return res.redirect('/admin/users')
   const hash = bcrypt.hashSync(password, 10)
-  db.updateUserPassword(parseInt(id, 10), hash)
+  await db.updateUserPassword(parseInt(id, 10), hash)
   res.redirect('/admin/users')
 })
 
-app.post('/admin/users/delete/:id', requireAdmin, (req, res) => {
+app.post('/admin/users/delete/:id', requireAdmin, async (req, res) => {
   const id = parseInt(req.params.id, 10)
-  const user = db.getUserById(id)
+  const user = await db.getUserById(id)
   if (!user) return res.redirect('/admin/users')
   if (user.role === 'admin') return res.redirect('/admin/users')
-  db.deleteUserById(id)
+  await db.deleteUserById(id)
   res.redirect('/admin/users')
 })
 
 
-app.get('/admin/export', requireAdmin, (req, res) => {
+app.get('/admin/export', requireAdmin, async (req, res) => {
   const ym = ymFromQuery(req.query.month)
   const days = daysOfMonth(ym)
-  const counts = db.getCountsForMonth(ym)
+  const counts = await db.getCountsForMonth(ym)
   const wb = xlsx.utils.book_new()
   areas.forEach((area) => {
     const sheetRows = []
@@ -219,113 +220,115 @@ app.get('/admin/export', requireAdmin, (req, res) => {
   res.send(buf)
 })
 
-app.get('/editor', requireEditor, (req, res) => {
+app.get('/editor', requireEditor, async (req, res) => {
   const ym = ymFromQuery(req.query.month)
   const days = daysOfMonth(ym)
   const unitId = req.session.user.unit_id
-  const lockedArr = db.getLockedDatesForMonth(ym)
+  const lockedArr = await db.getLockedDatesForMonth(ym)
   const locks = {}
   lockedArr.forEach((d) => (locks[d] = true))
   if (unitId === 4000) {
     const unit = { id: 4000, name: 'POLICIA RURAL' }
-    const counts = db.getCountsForMonth(ym)
+    const counts = await db.getCountsForMonth(ym)
     res.render('editor', { unit, days, counts, ym, locks, areaId: 4, units: unitsByArea })
   } else {
-    const unit = db.getUnitById(unitId)
-    const counts = db.getCountsForUnitMonth(unit.id, ym)
+    const unit = await db.getUnitById(unitId)
+    const counts = await db.getCountsForUnitMonth(unit.id, ym)
     res.render('editor', { unit, days, counts, ym, locks })
   }
 })
 
-app.post('/editor/save', requireEditor, (req, res) => {
+app.post('/editor/save', requireEditor, async (req, res) => {
   const unitId = req.session.user.unit_id
   const ym = ymFromQuery(req.body.month)
-  const lockedArr = db.getLockedDatesForMonth(ym)
+  const lockedArr = await db.getLockedDatesForMonth(ym)
   const lockSet = {}
   lockedArr.forEach((d) => (lockSet[d] = true))
 
   if (unitId === 4000) {
-    const countsMap = db.getCountsForMonth(ym)
+    const countsMap = await db.getCountsForMonth(ym)
     const manualObj = req.body.manual || {}
     const electronicObj = req.body.electronic || {}
     const areaUnits = unitsByArea[4] || []
     const days = daysOfMonth(ym)
-    areaUnits.forEach((u) => {
-      if (u.id === 4000) return
-      days.forEach((d) => {
-        if (lockSet[d.iso]) return
+    for (const u of areaUnits) {
+      if (u.id === 4000) continue
+      for (const d of days) {
+        if (lockSet[d.iso]) continue
         const key = `${u.id}|${d.iso}`
         const prev = countsMap[key] || { manual: 0, electronic: 0 }
         const mValRaw = manualObj[u.id] && manualObj[u.id][d.iso]
         const eValRaw = electronicObj[u.id] && electronicObj[u.id][d.iso]
         const mVal = (mValRaw !== undefined && mValRaw !== '') ? parseInt(mValRaw, 10) || 0 : prev.manual
         const eVal = (eValRaw !== undefined && eValRaw !== '') ? parseInt(eValRaw, 10) || 0 : prev.electronic
-        db.upsertCount(u.id, d.iso, mVal, eVal)
-      })
-    })
+        await db.upsertCount(u.id, d.iso, mVal, eVal)
+      }
+    }
   } else {
-    const countsMap = db.getCountsForUnitMonth(unitId, ym)
+    const countsMap = await db.getCountsForUnitMonth(unitId, ym)
     const manualObj = req.body.manual || {}
     const electronicObj = req.body.electronic || {}
     const days = daysOfMonth(ym)
-    days.forEach((d) => {
-      if (lockSet[d.iso]) return
+    for (const d of days) {
+      if (lockSet[d.iso]) continue
       const prev = countsMap[d.iso] || { manual: 0, electronic: 0 }
       const mValRaw = manualObj[d.iso]
       const eValRaw = electronicObj[d.iso]
       const mVal = (mValRaw !== undefined && mValRaw !== '') ? parseInt(mValRaw, 10) || 0 : prev.manual
       const eVal = (eValRaw !== undefined && eValRaw !== '') ? parseInt(eValRaw, 10) || 0 : prev.electronic
-      db.upsertCount(unitId, d.iso, mVal, eVal)
-    })
+      await db.upsertCount(unitId, d.iso, mVal, eVal)
+    }
   }
   res.redirect(`/editor?month=${ym}`)
 })
 
-app.post('/admin/lock/:date', requireAdmin, (req, res) => {
+app.post('/admin/lock/:date', requireAdmin, async (req, res) => {
   const date = req.params.date
-  db.lockDate(date)
+  await db.lockDate(date)
   const ym = date.substring(0, 7)
   res.redirect(`/admin/locks?month=${ym}`)
 })
 
-app.post('/admin/unlock/:date', requireAdmin, (req, res) => {
+app.post('/admin/unlock/:date', requireAdmin, async (req, res) => {
   const date = req.params.date
-  db.unlockDate(date)
+  await db.unlockDate(date)
   const ym = date.substring(0, 7)
   res.redirect(`/admin/locks?month=${ym}`)
 })
 
-app.post('/admin/lock-month/:ym', requireAdmin, (req, res) => {
+app.post('/admin/lock-month/:ym', requireAdmin, async (req, res) => {
   const ym = req.params.ym
   const days = daysOfMonth(ym)
-  days.forEach((d) => db.lockDate(d.iso))
+  for (const d of days) { await db.lockDate(d.iso) }
   res.redirect(`/admin/locks?month=${ym}`)
 })
 
-app.post('/admin/unlock-month/:ym', requireAdmin, (req, res) => {
+app.post('/admin/unlock-month/:ym', requireAdmin, async (req, res) => {
   const ym = req.params.ym
   const days = daysOfMonth(ym)
-  days.forEach((d) => db.unlockDate(d.iso))
+  for (const d of days) { await db.unlockDate(d.iso) }
   res.redirect(`/admin/locks?month=${ym}`)
 })
 
-app.post('/admin/reset', requireAdmin, (req, res) => {
-  db.resetApp()
+app.post('/admin/reset', requireAdmin, async (req, res) => {
+  await db.resetApp()
   req.session.destroy(() => {
     res.redirect('/login')
   })
 })
 
-app.post('/admin/reset/', requireAdmin, (req, res) => {
-  db.resetApp()
+app.post('/admin/reset/', requireAdmin, async (req, res) => {
+  await db.resetApp()
   req.session.destroy(() => {
     res.redirect('/login')
   })
 })
 
 const PORT = process.env.PORT || 3000
-db.init()
-db.seedAreasUnits(areas, unitsByArea)
-app.listen(PORT, () => {
-  console.log(`Servidor en http://localhost:${PORT}/login`)
-})
+;(async function(){
+  await db.init()
+  await db.seedAreasUnits(areas, unitsByArea)
+  app.listen(PORT, () => {
+    console.log(`Servidor en http://localhost:${PORT}/login`)
+  })
+})()

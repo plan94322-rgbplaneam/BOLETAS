@@ -1,114 +1,112 @@
-const path = require('path')
+const { Pool } = require('pg')
 const bcrypt = require('bcrypt')
-const Database = require('better-sqlite3')
+const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } })
 
-const db = new Database(path.join(__dirname, '..', 'data.db'))
-
-function init() {
-  db.prepare('CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password_hash TEXT, role TEXT, unit_id INTEGER)').run()
-  db.prepare('CREATE TABLE IF NOT EXISTS units (id INTEGER PRIMARY KEY, area_id INTEGER, name TEXT)').run()
-  db.prepare('CREATE TABLE IF NOT EXISTS counts (id INTEGER PRIMARY KEY AUTOINCREMENT, unit_id INTEGER, date TEXT, manual INTEGER, electronic INTEGER)').run()
-  db.prepare('CREATE TABLE IF NOT EXISTS locks (date TEXT PRIMARY KEY)').run()
-  const exists = db.prepare('SELECT id FROM users WHERE username = ?').get('admin')
-  if (!exists) {
+async function init() {
+  await pool.query('CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, username TEXT UNIQUE, password_hash TEXT, role TEXT, unit_id INTEGER)')
+  await pool.query('CREATE TABLE IF NOT EXISTS units (id INTEGER PRIMARY KEY, area_id INTEGER, name TEXT)')
+  await pool.query('CREATE TABLE IF NOT EXISTS counts (id SERIAL PRIMARY KEY, unit_id INTEGER, date TEXT, manual INTEGER, electronic INTEGER, UNIQUE(unit_id, date))')
+  await pool.query('CREATE TABLE IF NOT EXISTS locks (date TEXT PRIMARY KEY)')
+  const r = await pool.query('SELECT id FROM users WHERE username = $1 LIMIT 1', ['admin'])
+  if (r.rows.length === 0) {
     const hash = bcrypt.hashSync('admin', 10)
-    db.prepare('INSERT INTO users (username, password_hash, role, unit_id) VALUES (?, ?, ?, ?)').run('admin', hash, 'admin', null)
+    await pool.query('INSERT INTO users (username, password_hash, role, unit_id) VALUES ($1, $2, $3, $4)', ['admin', hash, 'admin', null])
   }
 }
 
-function seedAreasUnits(areas, unitsByArea) {
-  const insert = db.prepare('INSERT OR IGNORE INTO units (id, area_id, name) VALUES (?, ?, ?)')
-  areas.forEach((a) => {
-    ;(unitsByArea[a.id] || []).forEach((u) => {
-      insert.run(u.id, a.id, u.name)
-    })
-  })
-}
-
-function getUserByUsername(username) {
-  return db.prepare('SELECT * FROM users WHERE username = ?').get(username)
-}
-
-function getUserById(id) {
-  return db.prepare('SELECT * FROM users WHERE id = ?').get(id)
-}
-
-function getAllUsers() {
-  return db.prepare('SELECT u.id, u.username, u.role, u.unit_id, units.name AS unit_name FROM users u LEFT JOIN units ON units.id = u.unit_id ORDER BY u.id').all()
-}
-
-function createEditor(username, password_hash, unit_id) {
-  db.prepare('INSERT INTO users (username, password_hash, role, unit_id) VALUES (?, ?, ?, ?)').run(username, password_hash, 'editor', unit_id)
-}
-
-function updateUserPassword(id, password_hash) {
-  db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(password_hash, id)
-}
-
-function deleteUserById(id) {
-  db.prepare('DELETE FROM users WHERE id = ?').run(id)
-}
-
-function countUsersByUnit(unitId) {
-  const row = db.prepare('SELECT COUNT(*) AS c FROM users WHERE unit_id = ?').get(unitId)
-  return row ? row.c : 0
-}
-
-function getUnitById(id) {
-  return db.prepare('SELECT * FROM units WHERE id = ?').get(id)
-}
-
-function getCountsForMonth(ym) {
-  const rows = db.prepare('SELECT unit_id, date, IFNULL(manual,0) AS manual, IFNULL(electronic,0) AS electronic FROM counts WHERE date LIKE ?').all(`${ym}-%`)
-  const out = {}
-  rows.forEach((r) => {
-    out[`${r.unit_id}|${r.date}`] = { manual: r.manual, electronic: r.electronic }
-  })
-  return out
-}
-
-function getCountsForUnitMonth(unitId, ym) {
-  const rows = db.prepare('SELECT date, IFNULL(manual,0) AS manual, IFNULL(electronic,0) AS electronic FROM counts WHERE unit_id = ? AND date LIKE ?').all(unitId, `${ym}-%`)
-  const out = {}
-  rows.forEach((r) => {
-    out[r.date] = { manual: r.manual, electronic: r.electronic }
-  })
-  return out
-}
-
-function upsertCount(unitId, date, manual, electronic) {
-  const row = db.prepare('SELECT id, IFNULL(manual,0) AS manual, IFNULL(electronic,0) AS electronic FROM counts WHERE unit_id = ? AND date = ?').get(unitId, date)
-  const m = typeof manual === 'number' ? manual : (row ? row.manual : 0)
-  const e = typeof electronic === 'number' ? electronic : (row ? row.electronic : 0)
-  if (row) {
-    db.prepare('UPDATE counts SET manual = ?, electronic = ? WHERE id = ?').run(m, e, row.id)
-  } else {
-    db.prepare('INSERT INTO counts (unit_id, date, manual, electronic) VALUES (?, ?, ?, ?)').run(unitId, date, m, e)
+async function seedAreasUnits(areas, unitsByArea) {
+  for (const a of areas) {
+    for (const u of (unitsByArea[a.id] || [])) {
+      await pool.query('INSERT INTO units (id, area_id, name) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING', [u.id, a.id, u.name])
+    }
   }
 }
 
-function lockDate(date) {
-  db.prepare('INSERT OR IGNORE INTO locks (date) VALUES (?)').run(date)
+async function getUserByUsername(username) {
+  const r = await pool.query('SELECT * FROM users WHERE username = $1', [username])
+  return r.rows[0] || null
 }
 
-function unlockDate(date) {
-  db.prepare('DELETE FROM locks WHERE date = ?').run(date)
+async function getUserById(id) {
+  const r = await pool.query('SELECT * FROM users WHERE id = $1', [id])
+  return r.rows[0] || null
 }
 
-function isDateLocked(date) {
-  const row = db.prepare('SELECT date FROM locks WHERE date = ?').get(date)
-  return !!row
+async function getAllUsers() {
+  const r = await pool.query('SELECT u.id, u.username, u.role, u.unit_id, units.name AS unit_name FROM users u LEFT JOIN units ON units.id = u.unit_id ORDER BY u.id')
+  return r.rows
 }
 
-function getLockedDatesForMonth(ym) {
-  const rows = db.prepare('SELECT date FROM locks WHERE date LIKE ?').all(`${ym}-%`)
-  return rows.map((r) => r.date)
+async function createEditor(username, password_hash, unit_id) {
+  await pool.query('INSERT INTO users (username, password_hash, role, unit_id) VALUES ($1, $2, $3, $4)', [username, password_hash, 'editor', unit_id])
 }
 
-function resetApp() {
-  db.prepare('DELETE FROM counts').run()
-  db.prepare('DELETE FROM locks').run()
-  db.prepare("DELETE FROM users WHERE role != 'admin'").run()
+async function updateUserPassword(id, password_hash) {
+  await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [password_hash, id])
+}
+
+async function deleteUserById(id) {
+  await pool.query('DELETE FROM users WHERE id = $1', [id])
+}
+
+async function countUsersByUnit(unitId) {
+  const r = await pool.query('SELECT COUNT(*)::int AS c FROM users WHERE unit_id = $1', [unitId])
+  return (r.rows[0] && r.rows[0].c) || 0
+}
+
+async function getUnitById(id) {
+  const r = await pool.query('SELECT * FROM units WHERE id = $1', [id])
+  return r.rows[0] || null
+}
+
+async function getCountsForMonth(ym) {
+  const r = await pool.query('SELECT unit_id, date, COALESCE(manual,0) AS manual, COALESCE(electronic,0) AS electronic FROM counts WHERE date LIKE $1', [`${ym}-%`])
+  const out = {}
+  for (const row of r.rows) {
+    out[`${row.unit_id}|${row.date}`] = { manual: row.manual, electronic: row.electronic }
+  }
+  return out
+}
+
+async function getCountsForUnitMonth(unitId, ym) {
+  const r = await pool.query('SELECT date, COALESCE(manual,0) AS manual, COALESCE(electronic,0) AS electronic FROM counts WHERE unit_id = $1 AND date LIKE $2', [unitId, `${ym}-%`])
+  const out = {}
+  for (const row of r.rows) {
+    out[row.date] = { manual: row.manual, electronic: row.electronic }
+  }
+  return out
+}
+
+async function upsertCount(unitId, date, manual, electronic) {
+  const r = await pool.query('SELECT COALESCE(manual,0) AS manual, COALESCE(electronic,0) AS electronic FROM counts WHERE unit_id = $1 AND date = $2', [unitId, date])
+  const current = r.rows[0] || { manual: 0, electronic: 0 }
+  const m = typeof manual === 'number' ? manual : current.manual
+  const e = typeof electronic === 'number' ? electronic : current.electronic
+  await pool.query('INSERT INTO counts (unit_id, date, manual, electronic) VALUES ($1, $2, $3, $4) ON CONFLICT (unit_id, date) DO UPDATE SET manual = EXCLUDED.manual, electronic = EXCLUDED.electronic', [unitId, date, m, e])
+}
+
+async function lockDate(date) {
+  await pool.query('INSERT INTO locks (date) VALUES ($1) ON CONFLICT (date) DO NOTHING', [date])
+}
+
+async function unlockDate(date) {
+  await pool.query('DELETE FROM locks WHERE date = $1', [date])
+}
+
+async function isDateLocked(date) {
+  const r = await pool.query('SELECT date FROM locks WHERE date = $1', [date])
+  return r.rows.length > 0
+}
+
+async function getLockedDatesForMonth(ym) {
+  const r = await pool.query('SELECT date FROM locks WHERE date LIKE $1', [`${ym}-%`])
+  return r.rows.map((x) => x.date)
+}
+
+async function resetApp() {
+  await pool.query('DELETE FROM counts')
+  await pool.query('DELETE FROM locks')
+  await pool.query("DELETE FROM users WHERE role != 'admin'")
 }
 
 module.exports = {
