@@ -10,8 +10,8 @@ const { areas, unitsByArea } = require('./src/units')
 const app = express()
 app.set('view engine', 'ejs')
 app.set('views', path.join(__dirname, 'src', 'views'))
-app.use(express.urlencoded({ extended: true, limit: '10mb' }))
-app.use(express.json({ limit: '10mb' }))
+app.use(express.urlencoded({ extended: true, limit: '50mb', parameterLimit: 100000 }))
+app.use(express.json({ limit: '50mb' }))
 app.use(express.static(path.join(__dirname, 'public')))
 const SESSION_SECRET = process.env.SESSION_SECRET || 'boletas-secret'
 app.set('trust proxy', 1)
@@ -279,6 +279,7 @@ app.post('/editor/save', requireEditor, async (req, res) => {
       await db.upsertCount(unitId, d.iso, mVal, eVal)
     }
   }
+  if (req.is('application/json')) { return res.json({ ok: true }) }
   res.redirect(`/editor?month=${ym}`)
 })
 

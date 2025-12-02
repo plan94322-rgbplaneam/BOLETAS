@@ -25,7 +25,7 @@
       </div>
       <h2>Registro mensual <%= ym %></h2>
       <% if (unit.id === 4000) { %>
-        <form method="post" action="/editor/save">
+        <form id="ruralForm" method="post" action="/editor/save">
           <input type="hidden" name="month" value="<%= ym %>">
           <table class="grid">
             <thead>
@@ -83,8 +83,43 @@
             <button type="submit">Guardar</button>
           </div>
         </form>
+        <script>
+        (function(){
+          var form = document.getElementById('ruralForm');
+          if(!form) return;
+          form.addEventListener('submit', function(ev){
+            ev.preventDefault();
+            var ym = form.querySelector('input[name="month"]').value;
+            var manual = {}, electronic = {};
+            var mInputs = form.querySelectorAll('input[name^="manual["]');
+            var eInputs = form.querySelectorAll('input[name^="electronic["]');
+            mInputs.forEach(function(inp){
+              if(inp.disabled) return;
+              var v = inp.value;
+              if(v === '' || v == null) return;
+              var n = parseInt(v, 10); if(isNaN(n)) n = 0;
+              var mt = inp.name.match(/^manual\[(\d+)\]\[(\d{4}-\d{2}-\d{2})\]$/);
+              if(mt){ var uid = mt[1], date = mt[2]; manual[uid] = manual[uid] || {}; manual[uid][date] = n; }
+            });
+            eInputs.forEach(function(inp){
+              if(inp.disabled) return;
+              var v = inp.value;
+              if(v === '' || v == null) return;
+              var n = parseInt(v, 10); if(isNaN(n)) n = 0;
+              var mt = inp.name.match(/^electronic\[(\d+)\]\[(\d{4}-\d{2}-\d{2})\]$/);
+              if(mt){ var uid = mt[1], date = mt[2]; electronic[uid] = electronic[uid] || {}; electronic[uid][date] = n; }
+            });
+            fetch('/editor/save', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
+              body: JSON.stringify({ month: ym, manual: manual, electronic: electronic })
+            }).then(function(r){ if(!r.ok) throw new Error('Error'); return r.json(); })
+              .then(function(){ window.location.href = '/editor?month='+ym; })
+              .catch(function(err){ alert('Error al guardar: '+err); });
+          });
+        })();
+        </script>
       <% } else { %>
-        <form method="post" action="/editor/save">
+        <form id="unitForm" method="post" action="/editor/save">
           <input type="hidden" name="month" value="<%= ym %>">
           <table class="grid">
             <thead>
@@ -127,6 +162,41 @@
             <button type="submit">Guardar</button>
           </div>
         </form>
+        <script>
+        (function(){
+          var form = document.getElementById('unitForm');
+          if(!form) return;
+          form.addEventListener('submit', function(ev){
+            ev.preventDefault();
+            var ym = form.querySelector('input[name="month"]').value;
+            var manual = {}, electronic = {};
+            var mInputs = form.querySelectorAll('input[name^="manual["]');
+            var eInputs = form.querySelectorAll('input[name^="electronic["]');
+            mInputs.forEach(function(inp){
+              if(inp.disabled) return;
+              var v = inp.value;
+              if(v === '' || v == null) return;
+              var n = parseInt(v, 10); if(isNaN(n)) n = 0;
+              var mt = inp.name.match(/^manual\[(\d{4}-\d{2}-\d{2})\]$/);
+              if(mt){ var date = mt[1]; manual[date] = n; }
+            });
+            eInputs.forEach(function(inp){
+              if(inp.disabled) return;
+              var v = inp.value;
+              if(v === '' || v == null) return;
+              var n = parseInt(v, 10); if(isNaN(n)) n = 0;
+              var mt = inp.name.match(/^electronic\[(\d{4}-\d{2}-\d{2})\]$/);
+              if(mt){ var date = mt[1]; electronic[date] = n; }
+            });
+            fetch('/editor/save', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
+              body: JSON.stringify({ month: ym, manual: manual, electronic: electronic })
+            }).then(function(r){ if(!r.ok) throw new Error('Error'); return r.json(); })
+              .then(function(){ window.location.href = '/editor?month='+ym; })
+              .catch(function(err){ alert('Error al guardar: '+err); });
+          });
+        })();
+        </script>
       <% } %>
     </section>
   </div>
