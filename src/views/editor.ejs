@@ -112,8 +112,11 @@
             fetch('/editor/save', {
               method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
               body: JSON.stringify({ month: ym, manual: manual, electronic: electronic })
-            }).then(function(r){ if(!r.ok) throw new Error('Error'); return r.json(); })
-              .then(function(){ window.location.href = '/editor?month='+ym; })
+            }).then(function(r){
+              var ct = (r.headers.get('content-type')||'');
+              if(ct.indexOf('application/json')!==-1){ return r.json(); }
+              window.location.href = '/login';
+            }).then(function(){ window.location.href = '/editor?month='+ym; })
               .catch(function(err){ alert('Error al guardar: '+err); });
           });
         })();
@@ -191,8 +194,11 @@
             fetch('/editor/save', {
               method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
               body: JSON.stringify({ month: ym, manual: manual, electronic: electronic })
-            }).then(function(r){ if(!r.ok) throw new Error('Error'); return r.json(); })
-              .then(function(){ window.location.href = '/editor?month='+ym; })
+            }).then(function(r){
+              var ct = (r.headers.get('content-type')||'');
+              if(ct.indexOf('application/json')!==-1){ return r.json(); }
+              window.location.href = '/login';
+            }).then(function(){ window.location.href = '/editor?month='+ym; })
               .catch(function(err){ alert('Error al guardar: '+err); });
           });
         })();

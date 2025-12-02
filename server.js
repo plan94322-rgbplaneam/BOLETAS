@@ -48,17 +48,26 @@ function daysOfMonth(ym) {
 }
 
 function requireAuth(req, res, next) {
-  if (!req.session.user) return res.redirect('/login')
+  if (!req.session.user) {
+    if (req.is('application/json')) return res.status(401).json({ ok: false, error: 'not_authenticated' })
+    return res.redirect('/login')
+  }
   next()
 }
 
 function requireAdmin(req, res, next) {
-  if (!req.session.user || req.session.user.role !== 'admin') return res.redirect('/login')
+  if (!req.session.user || req.session.user.role !== 'admin') {
+    if (req.is('application/json')) return res.status(403).json({ ok: false, error: 'forbidden' })
+    return res.redirect('/login')
+  }
   next()
 }
 
 function requireEditor(req, res, next) {
-  if (!req.session.user || req.session.user.role !== 'editor') return res.redirect('/login')
+  if (!req.session.user || req.session.user.role !== 'editor') {
+    if (req.is('application/json')) return res.status(403).json({ ok: false, error: 'forbidden' })
+    return res.redirect('/login')
+  }
   next()
 }
 
